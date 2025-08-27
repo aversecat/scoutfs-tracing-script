@@ -46,15 +46,26 @@ start_tracecmd() {
 wait_for_client_fence() {
 	# This will start tailing the journal from the current timestamp only,
 	# outputting the first matching event, and then exit immediately
+	EVENT_FILE=${OUTDIR}/event.log
 	echo "[ Waiting for trigger event in the journal ]"
-	journalctl -t kernel -g 'client.*reconnect timed out, fencing' -f -S now | head -n 1
+	journalctl -t kernel -g 'client.*reconnect timed out, fencing' -f -S now -n 1 > $EVENT_FILE &
+	JOURNAL_PID=$!
+
+	SPINNER="\|/-"
+	S=0
+	while sleep 1; do
+		S=$(( ++S % 4 ))
+		test -s $EVENT_FILE && break
+		echo -ne "\r${SPINNER:${S}:1}"
+	done
 }
 
-stop_tasks() {
-	echo "[ Stopping background tasks... ]"
-	kill -INT $TRACECMD_PID > /dev/null 2>&1
-	kill -INT $TCPDUMP_PID > /dev/null 2>&1
-	wait
+stop_tail() {
+	echo
+	echo "<< Interrupted by user >>" >> $EVENT_FILE
+	# INT doesn't terminate journalctl, and we want to use `wait` for the
+	# other bg jobs...
+	kill -TERM $JOURNAL_PID > /dev/null 2>&1
 }
 
 if [ ${#} -ne 2 ]; then
@@ -89,7 +100,7 @@ OUTDIR=$(date +%Y-%m%d-%H%M)
 mkdir -p $OUTDIR
 
 # always stop bg tasks on exit
-trap stop_tasks EXIT
+trap stop_tail SIGINT
 
 echo "[ Tracing scoutfs server listening on ${IPADDR}:${PORT} ]"
 
@@ -97,10 +108,10 @@ echo "[ Tracing scoutfs server listening on ${IPADDR}:${PORT} ]"
 start_tcpdump
 start_tracecmd
 
-# wait for the specific journal message
+# wait for the specific journal message, or ^C
 wait_for_client_fence
 
-echo "[ Event found in journal, wrapping up tracing ]"
+echo "[ Event found in journal, or received SIGINT, wrapping up tracing ]"
 
 # debatable how much extra tracing we need or want here. I'm going to go
 # very short by default just in case the system produces enough data
