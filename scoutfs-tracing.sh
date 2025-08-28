@@ -107,6 +107,9 @@ trap stop_tail SIGINT
 
 echo "[ Tracing scoutfs server listening on ${IPADDR}:${PORT} ]"
 
+# Mark start time of trace with full context
+echo "START   time=$(date '+%Y-%m-%d %H:%M:%S'), boottime=$(uptime -s), uptime=$(cat /proc/uptime |awk '{print $1}')" > $OUTDIR/time.log
+
 # fork trace utils and event catching job
 start_tcpdump
 start_tracecmd
@@ -128,6 +131,9 @@ kill -INT $TCPDUMP_PID > /dev/null 2>&1
 
 # we have to wait for our spawned jobs to finish collating
 wait
+
+# mark end of tracing time
+echo "FINISH  time=$(date '+%Y-%m-%d %H:%M:%S'), boottime=$(uptime -s), uptime=$(cat /proc/uptime |awk '{print $1}')" >> $OUTDIR/time.log
 
 # capture a few quick things now for context
 journalctl -b | tail -n 1000 > ${OUTDIR}/journal.log
