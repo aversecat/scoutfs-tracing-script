@@ -14,6 +14,7 @@ die() { echo $@; exit 1; }
 test $(id -u) -eq 0 || die "Please run this program as root"
 rpmquery tcpdump > /dev/null || die "Please do 'sudo dnf install tcpdump'"
 rpmquery trace-cmd > /dev/null || die "Please do 'sudo dnf install trace-cmd'"
+rpmquery zstd > /dev/null || die "Please do 'sudo dnf install zstd'"
 grep -qw scoutfs /proc/modules || die "Kernel module scoutfs not loaded"
 grep -qw scoutfs /proc/mounts || die "Scoutfs filesystem not mounted?"
 
