@@ -99,7 +99,7 @@ PORT=$2
 
 test_tcpdump
 
-OUTDIR=$(date +%Y-%m%d-%H%M)
+OUTDIR=scoutfs-trace.$(hostname).$(date +%Y-%m%d-%H%M)
 mkdir -p $OUTDIR
 
 # always stop bg tasks on exit
