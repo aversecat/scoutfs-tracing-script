@@ -32,13 +32,15 @@ test_tcpdump() {
 }
 
 start_tcpdump() {
-	tcpdump -p -i any host $IPADDR and tcp port $PORT or udp port $PORT -w $OUTDIR/tcpdump.pcap -W 2 -Z root -C $CHUNKSIZE > $OUTDIR/tcpdump.log 2>&1 &
+	echo "+tcpdump -p -i any host $IPADDR and tcp port $PORT or udp port $PORT -w $OUTDIR/tcpdump.pcap -W 2 -Z root -C $CHUNKSIZE" > $OUTDIR/tcpdump.log
+	tcpdump -p -i any host $IPADDR and tcp port $PORT or udp port $PORT -w $OUTDIR/tcpdump.pcap -W 2 -Z root -C $CHUNKSIZE >> $OUTDIR/tcpdump.log 2>&1 &
 	TCPDUMP_PID=$!
 	echo "[ Started tcpdump (${TCPDUMP_PID}) ]"
 }
 
 start_tracecmd() {
-	trace-cmd record -b 10240 -e "scoutfs:*" -m $(( CHUNKSIZE * 1024 )) -o $OUTDIR/trace.dat > $OUTDIR/trace.log 2>&1 &
+	echo "+trace-cmd record -b 10240 -e "scoutfs:*" -m $(( CHUNKSIZE * 1024 )) -o $OUTDIR/trace.dat" > $OUTDIR/trace.log
+	trace-cmd record -b 10240 -e "scoutfs:*" -m $(( CHUNKSIZE * 1024 )) -o $OUTDIR/trace.dat >> $OUTDIR/trace.log 2>&1 &
 	TRACECMD_PID=$!
 	echo "[ Started trace-cmd (${TRACECMD_PID}) ]"
 }
