@@ -10,11 +10,19 @@ export TZ=UTC
 
 die() { echo $@; exit 1; }
 
+: ${COMPRESS_ARGS:=--zstd}
+: ${COMPRESS_EXT:=zst}
+
 # basic sanity checks
 test $(id -u) -eq 0 || die "Please run this program as root"
 rpmquery tcpdump > /dev/null || die "Please do 'sudo dnf install tcpdump'"
 rpmquery trace-cmd > /dev/null || die "Please do 'sudo dnf install trace-cmd'"
-rpmquery zstd > /dev/null || die "Please do 'sudo dnf install zstd'"
+rpmquery zstd > /dev/null || {
+	echo "Consider installing the 'zstd' package for faster compression,"
+	echo "falling back to 'xz'."
+	COMPRESS_ARGS="--xz"
+	COMPRESS_EXT="xz"
+}
 grep -qw scoutfs /proc/modules || die "Kernel module scoutfs not loaded"
 grep -qw scoutfs /proc/mounts || die "Scoutfs filesystem not mounted?"
 
@@ -139,7 +147,7 @@ echo "FINISH  time=$(date '+%Y-%m-%d %H:%M:%S'), boottime=$(uptime -s), uptime=$
 journalctl -b | tail -n 1000 > ${OUTDIR}/journal.log
 dmesg | tail -n 1000 > ${OUTDIR}/dmesg
 
-# xz is way too slow, stop using it
-tar --zstd -cvf ${OUTDIR}.tar.zstd ${OUTDIR}/
-echo "[ Wrote ${OUTDIR}.tar.zstd ]"
+# xz is way too slow, stop using it!
+tar $COMPRESS_ARGS -cvf ${OUTDIR}.tar.${COMPRESS_EXT} ${OUTDIR}/
+echo "[ Wrote ${OUTDIR}.tar.${COMPRESS_EXT} ]"
 
