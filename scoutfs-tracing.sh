@@ -59,12 +59,12 @@ wait_for_client_fence() {
 	# outputting the first matching event, and then exit immediately
 	EVENT_FILE=${OUTDIR}/event.log
 	echo "[ Waiting for trigger event in the journal ]"
-	journalctl -t kernel -g 'client.*reconnect timed out, fencing' -f -S now -n 1 > $EVENT_FILE &
+	journalctl -t kernel -g 'server closing|client.*reconnect timed out, fencing' -f -S now -n 1 > $EVENT_FILE &
 	JOURNAL_PID=$!
 
 	SPINNER="\|/-"
 	S=0
-	while sleep 1; do
+	while sleep 0.5; do
 		S=$(( ++S % 4 ))
 		test -s $EVENT_FILE && break
 		echo -ne "\r${SPINNER:${S}:1}"
@@ -127,18 +127,16 @@ wait_for_client_fence
 
 echo "[ Event found in journal, or received SIGINT, wrapping up tracing ]"
 
-# debatable how much extra tracing we need or want here. I'm going to go
-# very short by default just in case the system produces enough data
-# to rollover the traces every few seconds, which is highly likely
-# in production scale setups.
-sleep 1
-
-# and close threads
+# immediately instruct trace-cmd to write out trace.dat file. If this
+# host is going to be powered off, we want it to complete that ASAP
 kill -INT $TRACECMD_PID > /dev/null 2>&1
 kill -INT $TCPDUMP_PID > /dev/null 2>&1
 
 # we have to wait for our spawned jobs to finish collating
 wait
+
+# call explicit fs sync on our output file data
+sync -f $OUTDIR
 
 # mark end of tracing time
 echo "FINISH  time=$(date '+%Y-%m-%d %H:%M:%S'), boottime=$(uptime -s), uptime=$(cat /proc/uptime |awk '{print $1}')" >> $OUTDIR/time.log
