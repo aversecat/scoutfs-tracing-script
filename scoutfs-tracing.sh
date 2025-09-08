@@ -110,8 +110,7 @@ PORT=$2
 
 test_tcpdump
 
-OUTDIR=scoutfs-trace.$(hostname).$(date +%Y-%m%d-%H%M)
-mkdir -p $OUTDIR
+OUTDIR=$(mktemp -d scoutfs-trace.$(hostname).$(date +%Y-%m%d-%H%M).XXXXXX)
 
 # always stop bg tasks on exit
 trap stop_tail SIGINT
@@ -124,6 +123,8 @@ echo "START   time=$(date '+%Y-%m-%d %H:%M:%S'), boottime=$(uptime -s), uptime=$
 # fork trace utils and event catching job
 start_tcpdump
 start_tracecmd
+
+echo "[ Trace data stored in ${OUTDIR} ]"
 
 # wait for the specific journal message, or ^C
 wait_for_client_fence
