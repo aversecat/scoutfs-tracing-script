@@ -51,6 +51,9 @@ start_tracecmd() {
 	trace-cmd record -b 10240 -e "scoutfs:*" -m $(( CHUNKSIZE * 1024 )) -o $OUTDIR/trace.dat >> $OUTDIR/trace.log 2>&1 &
 	TRACECMD_PID=$!
 	echo "[ Started trace-cmd (${TRACECMD_PID}) ]"
+
+	# create partial.dat for restore option
+	trace-cmd restore -c -o $OUTDIR/partial.dat > /dev/null 2>&1
 }
 
 # we can tail the journald to capture fencing messages.
