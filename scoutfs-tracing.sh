@@ -135,6 +135,7 @@ echo "[ Event found in journal, or received SIGINT, wrapping up tracing ]"
 # host is going to be powered off, we want it to complete that ASAP
 kill -INT $TRACECMD_PID > /dev/null 2>&1
 kill -INT $TCPDUMP_PID > /dev/null 2>&1
+kill -TERM $JOURNAL_PID > /dev/null 2>&1
 
 # we have to wait for our spawned jobs to finish collating
 wait
